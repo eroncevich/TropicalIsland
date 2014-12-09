@@ -60,7 +60,7 @@ int globalLight =1;
 double vSize =1;
 
 double camX=0;
-double camY=20;
+double camY=2;
 double camZ=15;
 
 double speed = .5;
@@ -179,6 +179,7 @@ static void palmTree(double x,double y, double z)
    glTranslatef(x,y,z);
    double h,phi;
    int incr = 40;
+   glRotatef(10*Sin(zh),1,0,0);
 
    glEnable(GL_TEXTURE_2D);
    glBindTexture(GL_TEXTURE_2D,2);
@@ -222,6 +223,68 @@ static void palmTree(double x,double y, double z)
    }
    glColor3f(0,0,0);
    glPopMatrix();
+}
+static void boat(){
+  glPushMatrix();
+  glTranslatef(0,Sin(zh-30),0);
+  int phi, theta, i;
+
+  glColor3f(.2,.2,.2);
+  glBegin(GL_QUAD_STRIP);
+  glNormal3f(0,1,0);
+  glVertex3f(3,1.05,2);
+  glVertex3f(3,1.05,10);
+  glVertex3f(2,1.05,2);
+  glVertex3f(2,1.05,10);
+  glEnd();
+
+  glBegin(GL_QUAD_STRIP);
+  glNormal3f(0,1,0);
+  glVertex3f(-2,1.05,2);
+  glVertex3f(-2,1.05,10);
+  glVertex3f(-3,1.05,2);
+  glVertex3f(-3,1.05,10);
+  glEnd();
+  glColor3f(0,0,0);
+
+
+  glEnable(GL_TEXTURE_2D);
+  for(i=0;i<5;i++){
+    //glPushMatrix();
+    glTranslatef(0,0,2);
+    glBindTexture(GL_TEXTURE_2D,2);
+    glBegin(GL_QUAD_STRIP);
+    for(phi=0;phi<=360;phi+=40){
+      glNormal3f(0,Sin(phi),Cos(phi));
+      glTexCoord2f((abs(180-phi))/180.0,0);
+      glVertex3f(5,Sin(phi),Cos(phi));
+      glTexCoord2f((abs(180-phi))/180.0,1);
+      glVertex3f(-5,Sin(phi),Cos(phi));
+    }
+    glEnd();
+
+    glBindTexture(GL_TEXTURE_2D,3);
+    glBegin(GL_TRIANGLE_FAN);
+    glNormal3f(-1,0,0);
+    glVertex3f(-5,0,0);
+    for(phi=360;phi>=0;phi-=40){
+      //glTexCoord2f(.3*(Cos(phi))+.5,.3*(Sin(phi))+.5);
+      glVertex3f(-5,Sin(phi),Cos(phi));
+    }
+    glEnd();
+    glBegin(GL_TRIANGLE_FAN);
+    glNormal3f(1,0,0);
+    glVertex3f(5,0,0);
+    for(phi=0;phi<=360;phi+=40){
+      glVertex3f(5,Sin(phi),Cos(phi));
+    }
+    glEnd();
+    //glPopMatrix();
+  }
+  glBindTexture(GL_TEXTURE_2D,0);
+  glDisable(GL_TEXTURE_2D);
+
+  glPopMatrix();
 }
 
 /*
@@ -296,16 +359,18 @@ void display()
       glPushMatrix();
       glTranslated(2,1,10);
       glRotated(10*t,0,1,0);
-      glutSolidTeapot(1);
+      //glutSolidTeapot(1);
       glPopMatrix();
 
       beach();
       palmTree(65,8,0);
-      ball(0,0,20,20);
+      //ball(0,0,20,20);
       palmTree(60,20,-40);
       palmTree(-20,27,-70);
       palmTree(-45,20, -45);
       palmTree(-75,7,10);
+
+      boat();
 
       glDisable(GL_BLEND);
       glDisable(GL_POLYGON_OFFSET_FILL);
@@ -314,14 +379,12 @@ void display()
    }
    glColor3f(0,0,0);
    glUseProgram(celShader);
-   //glEnable (GL_BLEND);
-   //glBlendFunc (GL_ZERO ,GL_ZERO);
    /*Insert All Objects Here Also*/
 
    glPushMatrix();
    glTranslated(2,1,10);
    glRotated(10*t,0,1,0);
-   glutSolidTeapot(1);
+   //glutSolidTeapot(1);
    glPopMatrix();
    //glColor3f(1,1,1);
    beach();
@@ -330,17 +393,19 @@ void display()
    palmTree(-20,27,-70);
    palmTree(-45,20, -45);
    palmTree(-75,7,10);
-   ball(0,0,20,20);
+   //ball(0,0,20,20);
+
+   boat();
 
    /*Ocean*/
    //glDisable(GL_BLEND);
    glColor3f(0,0,1);
    glBegin(GL_QUAD_STRIP);
    glNormal3f(0,1,0);
-   glVertex3d(1000,0,1000);
-   glVertex3d(-1000,0,1000);
-   glVertex3d(1000,0,-1000);
-   glVertex3d(-1000,0,-1000);
+   glVertex3d(1000,Sin(zh),1000);
+   glVertex3d(-1000,Sin(zh),1000);
+   glVertex3d(1000,Sin(zh),-1000);
+   glVertex3d(-1000,Sin(zh),-1000);
    glEnd();
    glUseProgram(0);
 
