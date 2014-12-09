@@ -1,0 +1,22 @@
+Project
+Evan Roncevich
+CSCI4229 Fall 2014
+
+Move with wasd, move camera with arrows
+
+So I got the Cel Shading Working, notice the 2 levels of color, along with the
+outlining of the landscape. It was difficult allowing the incorporation of colors,
+but that has been added. The outline works on all 3d objects, need to fix 2d objects.
+
+so now I need to add the Textures to the objects. I need to design a few more
+objects, fix the lighting a outlining on the tree, and fix the lighting of a few objects
+
+The final step will just be modifying the sizes of everything, adding animation,
+and
+
+run make and ./CelShading
+
+Key bindings
+  arrows Change Camera
+  wasd move around
+  ESC        Exit
