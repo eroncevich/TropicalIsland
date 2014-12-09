@@ -305,6 +305,7 @@ void display()
       palmTree(60,20,-40);
       palmTree(-20,27,-70);
       palmTree(-45,20, -45);
+      palmTree(-75,7,10);
 
       glDisable(GL_BLEND);
       glDisable(GL_POLYGON_OFFSET_FILL);
@@ -328,6 +329,7 @@ void display()
    palmTree(60,20,-40);
    palmTree(-20,27,-70);
    palmTree(-45,20, -45);
+   palmTree(-75,7,10);
    ball(0,0,20,20);
 
    /*Ocean*/
