@@ -27,6 +27,8 @@
  */
 #include "CSCIx229.h"
 #include "math.h"
+//#include <OPENAL/al.h>
+//#include <OPENAL/alc.h>
 
 int axes=1;       //  Display axes
 int mode=0;       //  Projection mode
@@ -54,13 +56,18 @@ int zh        =  90;  // Light azimuth
 int zh2       =  30;  // Light azimuth
 float ylight  =   2;  // Elevation of light
 
+// double       Svec[4];   // Texture planes S
+// double       Tvec[4];   // Texture planes T
+// double       Rvec[4];   // Texture planes R
+// double       Qvec[4];   // Texture planes Q
+
 int globalLight =1;
 
 //Position values
 double vSize =1;
 
 double camX=0;
-double camY=2;
+double camY=10;
 double camZ=15;
 
 double speed = .5;
@@ -148,6 +155,31 @@ static void ball(double x,double y,double z,double r)
 
    //  Offset, scale and rotate
    glTranslated(x,y,z);
+   glScaled(r,r,r);
+   glRotatef(90,1,0,0);
+
+   //  Bands of latitude
+   for (ph=-90;ph<90;ph+=inc)
+   {
+      glBegin(GL_QUAD_STRIP);
+      for (th=360;th>=0;th-=2*inc)
+      {
+         Vertex(th,ph);
+         Vertex(th,ph+inc);
+      }
+      glEnd();
+   }
+   //  Undo transofrmations
+   glPopMatrix();
+}
+static void island(double x,double y,double z,double r)
+{
+   int th,ph;
+   //  Save transformation
+   glPushMatrix();
+
+   //  Offset, scale and rotate
+   glTranslated(x,y,z);
    glScaled(r,r/2,r);
    glRotatef(90,1,0,0);
    //  White ball
@@ -224,9 +256,9 @@ static void palmTree(double x,double y, double z)
    glColor3f(0,0,0);
    glPopMatrix();
 }
-static void boat(){
+static void boat(double x, double y, double z){
   glPushMatrix();
-  glTranslatef(0,Sin(zh-30),0);
+  glTranslatef(x,y,z);
   int phi, theta, i;
 
   glColor3f(.2,.2,.2);
@@ -316,27 +348,35 @@ void display()
       gluLookAt(10*Sin(th)*Cos(ph),10*Sin(ph),10*Cos(th)*Cos(ph), camX,camY,camZ, 0,Cos(ph),0);
    }
 
-   float Position[]  = {20*Cos(zh),20,20*Sin(zh),1.0};
+   float Position[]  = {200*Cos(90)*Sin((zh2/4.0)-90),200*Cos((zh2/4.0)-90),200*Sin(90)*Sin((zh2/4.0)-90),1.0};
 
    //  Draw light position as sphere (still no lighting here)
-   glColor3f(1,1,1);
+   glColor3f(1,.7,0);
+  // float sunColor[]  = {1,.5,0,1.0};
+   glDisable(GL_LIGHTING);
    glPushMatrix();
+   //glEnable(GL_BLEND);
+   //glBlendFunc (GL_CONSTANT_COLOR ,GL_ZERO);
    glTranslated(Position[0],Position[1],Position[2]);
-   ball(0,0,0,1);
+   ball(0,0,0,20);
+   //glDisable(GL_BLEND);
    glPopMatrix();
    //  OpenGL should normalize normal vectors
    glEnable(GL_NORMALIZE);
    //  Enable lighting
    glEnable(GL_LIGHTING);
    //  glColor sets ambient and diffuse color materials
-   //glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
-   //glEnable(GL_COLOR_MATERIAL);
+   glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
+   glEnable(GL_COLOR_MATERIAL);
    //  Enable light 0
    glEnable(GL_LIGHT0);
    //  Set ambient, diffuse, specular components and position of light 0
-   //glLightfv(GL_LIGHT0,GL_AMBIENT ,Ambient);
-   //glLightfv(GL_LIGHT0,GL_DIFFUSE ,Diffuse);
-   //glLightfv(GL_LIGHT0,GL_SPECULAR,Specular);
+  //  float Ambient[]  = {.5,.5,.5,1.0};
+  //  glLightfv(GL_LIGHT0,GL_AMBIENT ,Ambient);
+  //  float Diffuse[]  = {0,0,0,1.0};
+  //  glLightfv(GL_LIGHT0,GL_DIFFUSE ,Diffuse);
+  //  float Specular[]  = {0,0,0,1.0};
+  //  glLightfv(GL_LIGHT0,GL_SPECULAR,Specular);
    glLightfv(GL_LIGHT0,GL_POSITION,Position);
 
 
@@ -352,25 +392,30 @@ void display()
       //Make outline black
       glEnable (GL_BLEND);
       glEnable (GL_POLYGON_OFFSET_LINE);
-      glPolygonOffset(0,300);
+      glPolygonOffset(0,100);
       glBlendFunc (GL_ZERO ,GL_ZERO);
       /*Insert All Objects Here*/
 
-      glPushMatrix();
-      glTranslated(2,1,10);
-      glRotated(10*t,0,1,0);
-      //glutSolidTeapot(1);
-      glPopMatrix();
-
       beach();
       palmTree(65,8,0);
-      //ball(0,0,20,20);
+      island(0,0,20,20);
       palmTree(60,20,-40);
       palmTree(-20,27,-70);
       palmTree(-45,20, -45);
       palmTree(-75,7,10);
 
-      boat();
+      boat(0,Sin(zh-30),-20);
+
+      glPushMatrix();
+      glTranslated(Position[0],Position[1],Position[2]);
+      ball(0,0,0,20);
+      glPopMatrix();
+
+      glPushMatrix();
+      glTranslated(0,11,20);
+      glRotated(10*t,0,1,0);
+      glutSolidTeapot(1);
+      glPopMatrix();
 
       glDisable(GL_BLEND);
       glDisable(GL_POLYGON_OFFSET_FILL);
@@ -379,13 +424,9 @@ void display()
    }
    glColor3f(0,0,0);
    glUseProgram(celShader);
+   //glEnable(GL_BLEND);
+   //glBlendFunc (GL_ONE ,GL_ZERO);
    /*Insert All Objects Here Also*/
-
-   glPushMatrix();
-   glTranslated(2,1,10);
-   glRotated(10*t,0,1,0);
-   //glutSolidTeapot(1);
-   glPopMatrix();
    //glColor3f(1,1,1);
    beach();
    palmTree(65,8,0);
@@ -393,12 +434,19 @@ void display()
    palmTree(-20,27,-70);
    palmTree(-45,20, -45);
    palmTree(-75,7,10);
-   //ball(0,0,20,20);
+   island(0,0,20,20);
 
-   boat();
+   boat(0,Sin(zh-30),-20);
 
    /*Ocean*/
    //glDisable(GL_BLEND);
+   glPushMatrix();
+   glTranslated(0,11,20);
+   glRotated(10*t,0,1,0);
+   glColor3f(1,.8,0);
+   glutSolidTeapot(1);
+   glPopMatrix();
+
    glColor3f(0,0,1);
    glBegin(GL_QUAD_STRIP);
    glNormal3f(0,1,0);
@@ -429,7 +477,7 @@ void idle()
    //  Elapsed time in seconds
    t = glutGet(GLUT_ELAPSED_TIME)/1000.0;
    zh = fmod(90*t,360.0);
-   zh2 = fmod(10*t,360.0);
+   zh2 = fmod(10*t,1440.0);
    //  Tell GLUT it is necessary to redisplay the scene
    glutPostRedisplay();
 }
