@@ -223,7 +223,10 @@ static void bird(double x,double y,double z,double dir){
     glVertex3f(phi/36.0-5,.5*Cos(phi)+.5,.5);
   }
   glEnd();
-  glColor3f(0,0,0);
+  if(celShader)
+    glColor3f(0,0,0);
+  else
+    glColor3f(1,1,1);
   glPopMatrix();
 }
 
@@ -276,7 +279,10 @@ static void palmTree(double x,double y, double z)
      glEnd();
      glPopMatrix();
    }
-   glColor3f(0,0,0);
+   if(celShader)
+     glColor3f(0,0,0);
+   else
+     glColor3f(1,1,1);
    glPopMatrix();
 }
 static void boat(double x, double y, double z){
@@ -300,7 +306,10 @@ static void boat(double x, double y, double z){
   glVertex3f(-3,1.05,2);
   glVertex3f(-3,1.05,10);
   glEnd();
-  glColor3f(0,0,0);
+  if(celShader)
+    glColor3f(0,0,0);
+  else
+    glColor3f(1,1,1);
 
 
   glEnable(GL_TEXTURE_2D);
@@ -361,7 +370,10 @@ static void tornado(double x, double y, double z, double r, double rotation){
      }
      glEnd();
    }
-   glColor3f(1,1,1);
+   if(celShader)
+     glColor3f(0,0,0);
+   else
+     glColor3f(1,1,1);
 
 
    glPopMatrix();
@@ -432,19 +444,19 @@ void display()
    //  Enable light 0
    glEnable(GL_LIGHT0);
    //  Set ambient, diffuse, specular components and position of light 0
-  //  float Ambient[]  = {.5,.5,.5,1.0};
-  //  glLightfv(GL_LIGHT0,GL_AMBIENT ,Ambient);
-  //  float Diffuse[]  = {0,0,0,1.0};
-  //  glLightfv(GL_LIGHT0,GL_DIFFUSE ,Diffuse);
-  //  float Specular[]  = {0,0,0,1.0};
-  //  glLightfv(GL_LIGHT0,GL_SPECULAR,Specular);
+   float Ambient[]  = {.1,.1,.1,1.0};
+   glLightfv(GL_LIGHT0,GL_AMBIENT ,Ambient);
+   float Diffuse[]  = {.7,.7,.7,1.0};
+   glLightfv(GL_LIGHT0,GL_DIFFUSE ,Diffuse);
+    float Specular[]  = {.4,.4,.4,1.0};
+    glLightfv(GL_LIGHT0,GL_SPECULAR,Specular);
    glLightfv(GL_LIGHT0,GL_POSITION,Position);
 
 
 
 
 
-   if(1){
+   if(celShader){
      //  Draw polygon outlines
       glPolygonMode(GL_FRONT,GL_LINE);
       glCullFace(GL_BACK);
@@ -480,7 +492,7 @@ void display()
       glPopMatrix();
 
       bird(100*Cos(zh2),80,100*Sin(zh2), zh2);
-      bird(200*Cos(-zh2/2.0),65,200*Sin(-zh2/2.0), -zh2/2.0);
+      bird(200*Cos(-zh2/2.0),65,200*Sin(-zh2/2.0), zh2/2.0);
       bird(70*Cos(2*zh2),120,70*Sin(2*zh2), -2*zh2);
       bird(150*Cos(-zh2+30),100,150*Sin(-zh2+30), zh2-30);
 
@@ -501,7 +513,10 @@ void display()
       glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
       glCullFace(GL_FRONT);
    }
-   glColor3f(0,0,0);
+   if(celShader)
+     glColor3f(0,0,0);
+   else
+     glColor3f(1,1,1);
    glUseProgram(celShader);
    //glEnable(GL_BLEND);
    //glBlendFunc (GL_ONE ,GL_ZERO);
@@ -539,7 +554,7 @@ void display()
    glutSolidTeapot(1);
    glPopMatrix();
 
-   glColor3f(0,0,1);
+   glColor3f(0,0,.5);
    glBegin(GL_QUAD_STRIP);
    glNormal3f(0,1,0);
    glVertex3d(1000,2*Sin(zh),1000);
@@ -709,6 +724,9 @@ void key(unsigned char ch,int x,int y)
    }
    else if (ch=='e') {
      keyStates['e'] =1;
+   }
+   else if (ch=='f') {
+     celShader =!celShader;
    }
    //  Reset view angle
    else if (ch == '0')

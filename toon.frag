@@ -18,7 +18,7 @@ void main()
    float intensity = dot(normalize(N),normalize(L));
 
    float f;
-   if (intensity > 0.1)
+   if (intensity > 0.2)
       f =0.75;
    else
       f = 0.4;
