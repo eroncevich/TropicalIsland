@@ -34,7 +34,7 @@ int axes=1;       //  Display axes
 int mode=0;       //  Projection mode
 int move=1;       //  Move light
 int th=-90;         //  Azimuth of view angle
-int ph=0;         //  Elevation of view angle
+int ph=-30;         //  Elevation of view angle
 int fov=55;       //  Field of view (for perspective)
 int light=1;      //  Lighting
 double asp=1;     //  Aspect ratio
@@ -53,13 +53,8 @@ int specular  =   0;  // Specular intensity (%)
 int shininess =   0;  // Shininess (power of two)
 float shinyvec[1];    // Shininess (value)
 int zh        =  90;  // Light azimuth
-int zh2       =  30;  // Light azimuth
+double zh2    =  30;  // Light azimuth
 float ylight  =   2;  // Elevation of light
-
-// double       Svec[4];   // Texture planes S
-// double       Tvec[4];   // Texture planes T
-// double       Rvec[4];   // Texture planes R
-// double       Qvec[4];   // Texture planes Q
 
 int globalLight =1;
 
@@ -67,21 +62,21 @@ int globalLight =1;
 double vSize =1;
 
 double camX=0;
-double camY=10;
-double camZ=15;
+double camY=71;
+double camZ=71;
 
 double speed = .5;
 
 double lineWidth =2;
+int sunPos =0;
 
-int celShader;
+int celShader=1;
 
 //button presses
 int keyStates[256];
 int keySpecialStates[256];
 
 void keyOperations ();
-
 
 
 /*
@@ -105,17 +100,8 @@ static void cylVertex(double th,double r,double y){
   glVertex3d(x,y,z);
 }
 
-static double beachLvl(double x,double z){
-  double height =Cos((x+4*Cos(z*20))*90);
-  if(height<0)
-    return height;
-  else
-    return height;
-}
 static void beach(){
   glPushMatrix();
-  double dx=.3;
-  double i,j;
   glRotatef(15,1,0,0);
   glScalef(5,5,5);
 
@@ -203,6 +189,43 @@ static void island(double x,double y,double z,double r)
    //  Undo transofrmations
    glPopMatrix();
 }
+static void bird(double x,double y,double z,double dir){
+  glPushMatrix();
+  glTranslatef(x,y,z);
+  glRotatef(dir,0,1,0);
+  int phi;
+  glColor3f(1,1,1);
+  glBegin(GL_QUAD_STRIP);
+  for(phi=-90;phi<=450;phi+=60){
+    glNormal3f(-Sin(phi),-1,0);
+    glVertex3f(phi/36.0-5,Cos(phi),-.5);
+    glVertex3f(phi/36.0-5,Cos(phi),.5);
+  }
+  glEnd();
+  glBegin(GL_QUAD_STRIP);
+  for(phi=-90;phi<=450;phi+=60){
+    glNormal3f(-Sin(phi),1,0);
+    glVertex3f(phi/36.0-5,.5*Cos(phi)+.5,.5);
+    glVertex3f(phi/36.0-5,.5*Cos(phi)+.5,-.5);
+  }
+  glEnd();
+  glBegin(GL_QUAD_STRIP);
+  for(phi=-90;phi<=450;phi+=60){
+    glNormal3f(0,0,-1);
+    glVertex3f(phi/36.0-5,.5*Cos(phi)+.5,-.5);
+    glVertex3f(phi/36.0-5,Cos(phi),-.5);
+  }
+  glEnd();
+  glBegin(GL_QUAD_STRIP);
+  for(phi=-90;phi<=450;phi+=60){
+    glNormal3f(0,0,1);
+    glVertex3f(phi/36.0-5,Cos(phi),.5);
+    glVertex3f(phi/36.0-5,.5*Cos(phi)+.5,.5);
+  }
+  glEnd();
+  glColor3f(0,0,0);
+  glPopMatrix();
+}
 
 static void palmTree(double x,double y, double z)
 {
@@ -259,7 +282,7 @@ static void palmTree(double x,double y, double z)
 static void boat(double x, double y, double z){
   glPushMatrix();
   glTranslatef(x,y,z);
-  int phi, theta, i;
+  int phi, i;
 
   glColor3f(.2,.2,.2);
   glBegin(GL_QUAD_STRIP);
@@ -319,6 +342,32 @@ static void boat(double x, double y, double z){
   glPopMatrix();
 }
 
+static void tornado(double x, double y, double z, double r, double rotation){
+   int theta;
+   int phi;
+
+   glPushMatrix();
+   glTranslated(vSize*x,vSize*y,vSize*z);
+   glRotated(rotation,0,1,0);
+   glScaled(r,2*r,r);
+   glColor3f(.5,.5,.5);
+   for(theta=0;theta<1440;theta+=10){
+     glBegin(GL_QUAD_STRIP);
+     for(phi=0;phi<=360;phi+=40){
+       glNormal3f(Cos(theta)*Cos(phi),Sin(phi),Sin(theta)*Cos(phi));
+       glVertex3f(theta/72.0*Cos(theta)+Cos(theta)*Cos(phi),theta/72.0+Sin(phi),theta/72.0*Sin(theta)+Sin(theta)*Cos(phi));
+       glNormal3f(Cos(theta+10)*Cos(phi),Sin(phi),Sin(theta+10)*Cos(phi));
+       glVertex3f((theta+10)/72.0*Cos(theta+10)+Cos(theta+10)*Cos(phi),(theta+10)/72.0+Sin(phi),(theta+10)/72.0*Sin(theta+10)+Sin(theta+10)*Cos(phi));
+     }
+     glEnd();
+   }
+   glColor3f(1,1,1);
+
+
+   glPopMatrix();
+}
+
+
 /*
  *  OpenGL (GLUT) calls this routine to display the scene
  */
@@ -331,13 +380,15 @@ void display()
    glEnable(GL_DEPTH_TEST);
 
    glEnable(GL_CULL_FACE);
+   keyOperations();
 
    glEnable(GL_LINE_SMOOTH);
    //  Undo previous transformations
    glLoadIdentity();
    //keyOperations ();
-   //camY = camYadded+groundLvl(camX,camZ);
-   glClearColor(.5,.5,1,0);
+   //glClearColor(.5,.5,1,0);
+   double sunX =abs(sunPos-90)/90.0;
+   glClearColor(.5,.1-.1*sunX*sunX*sunX,1-sunX*sunX*sunX,0);
    //  Perspective - set eye position
    if (mode==0)
    {
@@ -345,10 +396,20 @@ void display()
    }
    else if (mode==1)
    {
-      gluLookAt(10*Sin(th)*Cos(ph),10*Sin(ph),10*Cos(th)*Cos(ph), camX,camY,camZ, 0,Cos(ph),0);
+        double radius = sqrt(camX*camX + camZ*camZ +camY*camY);
+        camX = radius*Cos(2*zh2)*Cos(ph);
+        camZ = radius*Sin(2*zh2)*Cos(ph);
+        th = (int)(2*zh2+180)%360;
+        if(ph>-5){
+          ph=-5;
+        }
+        //ph = -26.5;
+        camY = -radius*Sin(ph);
+        //gluLookAt(camX,camY,camZ,10*Sin(ph),10*Cos(th)*Cos(ph), camX,camY,camZ, 0,Cos(ph),0);
+        gluLookAt(camX,camY,camZ,0,0,0,0,1,0);
    }
 
-   float Position[]  = {200*Cos(90)*Sin((zh2/4.0)-90),200*Cos((zh2/4.0)-90),200*Sin(90)*Sin((zh2/4.0)-90),1.0};
+   float Position[]  = {400*Cos(90)*Sin((sunPos)-90),400*Cos((sunPos)-90),400*Sin(90)*Sin(sunPos-90),1.0};
 
    //  Draw light position as sphere (still no lighting here)
    glColor3f(1,.7,0);
@@ -403,8 +464,9 @@ void display()
       palmTree(-20,27,-70);
       palmTree(-45,20, -45);
       palmTree(-75,7,10);
+      palmTree(40,22,-50);
 
-      boat(0,Sin(zh-30),-20);
+      boat(0,2*Sin(zh-15),-20);
 
       glPushMatrix();
       glTranslated(Position[0],Position[1],Position[2]);
@@ -417,6 +479,23 @@ void display()
       glutSolidTeapot(1);
       glPopMatrix();
 
+      bird(100*Cos(zh2),80,100*Sin(zh2), zh2);
+      bird(200*Cos(-zh2/2.0),65,200*Sin(-zh2/2.0), -zh2/2.0);
+      bird(70*Cos(2*zh2),120,70*Sin(2*zh2), -2*zh2);
+      bird(150*Cos(-zh2+30),100,150*Sin(-zh2+30), zh2-30);
+
+      tornado(100+20*Cos(zh2*4.0),2*Sin(zh),100+20*Sin(zh2*4.0),1,4*zh);
+      tornado(100+20*Cos(zh2*4.0),2*Sin(zh),100+20*Sin(zh2*4.0),.5,16*zh+10);
+      tornado(100+20*Cos(zh2*4.0),2*Sin(zh),100+20*Sin(zh2*4.0),.9,8*zh+30);
+      tornado(100+20*Cos(zh2*4.0),2*Sin(zh),100+20*Sin(zh2*4.0),.95,6*zh+90);
+
+      tornado(100+20*Cos(zh2*4.0+180),2*Sin(zh),100+20*Sin(zh2*4.0+180),1,4*zh);
+      tornado(100+20*Cos(zh2*4.0+180),2*Sin(zh),100+20*Sin(zh2*4.0+180),.5,16*zh+10);
+      tornado(100+20*Cos(zh2*4.0+180),2*Sin(zh),100+20*Sin(zh2*4.0+180),.9,8*zh+30);
+      tornado(100+20*Cos(zh2*4.0+180),2*Sin(zh),100+20*Sin(zh2*4.0+180),.95,6*zh+90);
+
+
+
       glDisable(GL_BLEND);
       glDisable(GL_POLYGON_OFFSET_FILL);
       glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -427,16 +506,29 @@ void display()
    //glEnable(GL_BLEND);
    //glBlendFunc (GL_ONE ,GL_ZERO);
    /*Insert All Objects Here Also*/
-   //glColor3f(1,1,1);
    beach();
    palmTree(65,8,0);
    palmTree(60,20,-40);
    palmTree(-20,27,-70);
    palmTree(-45,20, -45);
    palmTree(-75,7,10);
+   palmTree(40,22,-50);
    island(0,0,20,20);
+   bird(100*Cos(zh2),80,100*Sin(zh2), zh2);
+   bird(200*Cos(-zh2/2.0),65,200*Sin(-zh2/2.0), zh2/2.0);
+   bird(70*Cos(2*zh2),120,70*Sin(2*zh2), -2*zh2);
+   bird(150*Cos(-zh2+30),100,150*Sin(-zh2+30), zh2-30);
 
-   boat(0,Sin(zh-30),-20);
+   boat(0,2*Sin(zh-15),-20);
+   tornado(100+20*Cos(zh2*4.0),2*Sin(zh),100+20*Sin(zh2*4.0),1,4*zh);
+   tornado(100+20*Cos(zh2*4.0),2*Sin(zh),100+20*Sin(zh2*4.0),.5,16*zh+10);
+   tornado(100+20*Cos(zh2*4.0),2*Sin(zh),100+20*Sin(zh2*4.0),.9,8*zh+30);
+   tornado(100+20*Cos(zh2*4.0),2*Sin(zh),100+20*Sin(zh2*4.0),.95,6*zh+90);
+
+   tornado(100+20*Cos(zh2*4.0+180),2*Sin(zh),100+20*Sin(zh2*4.0+180),1,4*zh);
+   tornado(100+20*Cos(zh2*4.0+180),2*Sin(zh),100+20*Sin(zh2*4.0+180),.5,16*zh+10);
+   tornado(100+20*Cos(zh2*4.0+180),2*Sin(zh),100+20*Sin(zh2*4.0+180),.9,8*zh+30);
+   tornado(100+20*Cos(zh2*4.0+180),2*Sin(zh),100+20*Sin(zh2*4.0+180),.95,6*zh+90);
 
    /*Ocean*/
    //glDisable(GL_BLEND);
@@ -450,10 +542,10 @@ void display()
    glColor3f(0,0,1);
    glBegin(GL_QUAD_STRIP);
    glNormal3f(0,1,0);
-   glVertex3d(1000,Sin(zh),1000);
-   glVertex3d(-1000,Sin(zh),1000);
-   glVertex3d(1000,Sin(zh),-1000);
-   glVertex3d(-1000,Sin(zh),-1000);
+   glVertex3d(1000,2*Sin(zh),1000);
+   glVertex3d(-1000,2*Sin(zh),1000);
+   glVertex3d(1000,2*Sin(zh),-1000);
+   glVertex3d(-1000,2*Sin(zh),-1000);
    glEnd();
    glUseProgram(0);
 
@@ -477,7 +569,7 @@ void idle()
    //  Elapsed time in seconds
    t = glutGet(GLUT_ELAPSED_TIME)/1000.0;
    zh = fmod(90*t,360.0);
-   zh2 = fmod(10*t,1440.0);
+   zh2 = fmod(11.25*t,1440.0);
    //  Tell GLUT it is necessary to redisplay the scene
    glutPostRedisplay();
 }
@@ -505,29 +597,91 @@ void special(int key,int x,int y)
    th %= 360;
    ph %= 360;
    //  Update projection
-   Project(fov,asp,dim);
+   //Project(fov,asp,dim);
    //  Tell GLUT it is necessary to redisplay the scene
    //glutPostRedisplay();
 }
 void upSpecial(int key,int x,int y)
 {
   if(key==GLUT_KEY_UP){
-    ph-=5;
+    keySpecialStates[GLUT_KEY_UP]=0;
   }else if(key==GLUT_KEY_DOWN){
-    ph+=5;
+    keySpecialStates[GLUT_KEY_DOWN]=0;
   }
   else if(key==GLUT_KEY_RIGHT){
-    th+=5;
+    keySpecialStates[GLUT_KEY_RIGHT]=0;
   }else if(key==GLUT_KEY_LEFT){
-    th-=5;
+    keySpecialStates[GLUT_KEY_LEFT]=0;
   }
 }
 
 void keyOperations () {
+  if(keyStates['w']==1){
+    camX+=Cos(th)*speed;
+    camZ+=Sin(th)*speed;
+    camY+=Sin(ph)*speed;
+  }
+  if(keyStates['a']==1){
+    camX+=Sin(th)*speed;
+    camZ+=-Cos(th)*speed;
+  }
+  if (keyStates['d']==1) {
+    camX+=-Sin(th)*speed;
+    camZ+=Cos(th)*speed;
+  }
+  if (keyStates['s']==1) {
+    camX-=Cos(th)*speed;
+    camZ-=Sin(th)*speed;
+    camY-=Sin(ph)*speed;
+  }
+  if(keySpecialStates[GLUT_KEY_UP]==1){
+    ph+=3;
+    if(ph>89)
+      ph=89;
+  }
+  if(keySpecialStates[GLUT_KEY_RIGHT]==1){
+    th+=3;
+  }
+  if(keySpecialStates[GLUT_KEY_LEFT]==1){
+    th-=3;
+  }
+  if(keySpecialStates[GLUT_KEY_DOWN]==1){
+    ph-=3;
+    if(ph<-89)
+      ph=-89;
+  }
+  if (keyStates['q'] ==1) {
+    sunPos-=1;
+    if(sunPos<0)
+      sunPos =0;
+  }
+  else if (keyStates['e'] ==1) {
+    sunPos+=1;
+    if(sunPos>180)
+      sunPos =180;
+  }
 }
 
 void upKey(unsigned char ch,int x,int y)
 {
+  if (ch=='w') {
+    keyStates['w'] =0;
+  }
+  if (ch=='a') {
+    keyStates['a'] =0;
+  }
+  if (ch=='d') {
+    keyStates['d'] =0;
+  }
+  if (ch=='s') {
+    keyStates['s'] =0;
+  }
+  if (ch=='q') {
+    keyStates['q'] =0;
+  }
+  if (ch=='e') {
+    keyStates['e'] =0;
+  }
 }
 /*
  *  GLUT calls this routine when a key is pressed
@@ -539,20 +693,22 @@ void key(unsigned char ch,int x,int y)
       exit(0);
 
    else if (ch=='w') {
-     camX+=Cos(th)*speed;
-     camZ+=Sin(th)*speed;
+     keyStates['w'] =1;
    }
    else if (ch=='a') {
-     camX+=Sin(th)*speed;
-     camZ+=-Cos(th)*speed;
+     keyStates['a'] =1;
    }
    else if (ch=='d') {
-     camX+=-Sin(th)*speed;
-     camZ+=Cos(th)*speed;
+     keyStates['d'] =1;
    }
    else if (ch=='s') {
-     camX-=Cos(th)*speed;
-     camZ-=Sin(th)*speed;
+     keyStates['s'] =1;
+   }
+   else if (ch=='q') {
+     keyStates['q'] =1;
+   }
+   else if (ch=='e') {
+     keyStates['e'] =1;
    }
    //  Reset view angle
    else if (ch == '0')
@@ -569,10 +725,8 @@ void key(unsigned char ch,int x,int y)
       fov++;
    else if(ch == 'm')
       mode = !mode;
-   //  Translate shininess power to value (-1 => 0)
-   shinyvec[0] = shininess<0 ? 0 : pow(2.0,shininess);
    //  Reproject
-   Project(fov,asp,dim);
+   //Project(fov,asp,dim);
    //  Animate if requested
    //glutIdleFunc(idle);//move?idle:NULL);
    //  Tell GLUT it is necessary to redisplay the scene
